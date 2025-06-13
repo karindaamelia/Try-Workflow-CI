@@ -12,26 +12,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: 🧾 Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: 🧪 Setup Miniconda with conda.yaml
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: "3.10"
+          environment-file: MLProject/conda.yaml
+          activate-environment: mlflow-env
+          auto-activate-base: false
 
-      - name: Install dependencies from conda.yaml
-        working-directory: MLProject
+      - name: 🧠 Confirm Python & packages
         run: |
-          pip install --upgrade pip
-          pip install -r <(grep -oP '(?<=- ).*' conda.yaml | grep -v '^pip$')
+          which python
+          python --version
+          pip list
 
-      - name: Train model via MLflow Project
-        working-directory: MLProject
-        env:
-          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
-          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+      - name: 🧰 Run MLflow Project
         run: |
-          mlflow run . \
+          mkdir -p models
+          mlflow run MLProject \
+            -e train \
             -P data_path=air_quality_preprocessing.csv \
             -P model_output=models/model.pkl
