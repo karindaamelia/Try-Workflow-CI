@@ -1,0 +1,37 @@
+name: Workflow CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  train_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies from conda.yaml
+        working-directory: MLProject
+        run: |
+          pip install --upgrade pip
+          pip install -r <(grep -oP '(?<=- ).*' conda.yaml | grep -v '^pip$')
+
+      - name: Train model via MLflow Project
+        working-directory: MLProject
+        env:
+          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          mlflow run . \
+            -P data_path=air_quality_preprocessing.csv \
+            -P model_output=models/model.pkl
